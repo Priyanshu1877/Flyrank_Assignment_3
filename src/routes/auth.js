@@ -1,5 +1,6 @@
 const express = require("express");
 const supabase = require("../supabase");
+const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -65,6 +66,19 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: "An unexpected error occurred during login" });
   }
+});
+
+/**
+ * POST /auth/logout
+ * Protected route - invalidates session via Supabase sign-out
+ */
+router.post("/logout", authMiddleware, async (req, res) => {
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    // Ignore signout network errors if session is already cleared
+  }
+  return res.status(204).send();
 });
 
 module.exports = router;
