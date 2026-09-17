@@ -1,5 +1,7 @@
 require("dotenv").config();
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const openapiSpec = require("./swagger/openapi.json");
 const supabase = require("./supabase");
 const authRouter = require("./routes/auth");
 const protectedRouter = require("./routes/protected");
@@ -7,6 +9,7 @@ const summarizeRouter = require("./routes/summarize");
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use("/auth", authRouter);
 app.use("/", protectedRouter);
 app.use("/", summarizeRouter);

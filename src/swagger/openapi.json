@@ -1,0 +1,341 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FlyRank Backend AI & Auth API",
+    "version": "1.0.0",
+    "description": "Interactive API documentation for FlyRank AI Summarizer and Supabase Auth integration."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server (Port 3000)"
+    },
+    {
+      "url": "http://localhost:6001",
+      "description": "Local development server (Port 6001)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT access_token obtained from POST /auth/login"
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Check server health and active AI provider.",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "ok",
+                  "provider": "groq"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/summarize": {
+      "post": {
+        "summary": "Summarize text",
+        "description": "Summarizes input text into exactly 3 bullet points using configured AI provider.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "example": "Artificial Intelligence is transforming software engineering by automating routine tasks and enhancing human capabilities."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful summarization",
+            "content": {
+              "application/json": {
+                "example": {
+                  "bullets": [
+                    "AI is transforming software engineering.",
+                    "It automates routine development tasks.",
+                    "It enhances human engineering capabilities."
+                  ],
+                  "meta": {
+                    "provider": "groq",
+                    "model": "llama-3.1-8b-instant",
+                    "inputTokens": 45,
+                    "outputTokens": 30,
+                    "estCostUsd": 0.00001,
+                    "cached": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Request body must include a non-empty 'text' string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "summary": "Sign up new user",
+        "description": "Registers a new user using Supabase Auth.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "user": {
+                    "id": "12345678-1234-1234-1234-1234567890ab",
+                    "email": "user@example.com",
+                    "created_at": "2026-09-17T21:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing credentials or invalid request",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Email and password are required"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Log in user",
+        "description": "Authenticates user and returns JWT access_token and refresh_token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "example": {
+                  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "refresh_token": "refresh_token_example_123",
+                  "user": {
+                    "id": "12345678-1234-1234-1234-1234567890ab",
+                    "email": "user@example.com"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing credentials",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Email and password are required"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid login credentials",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Invalid login credentials"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Log out user",
+        "description": "Protected route that invalidates current session.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Log out successful (No Content)"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Invalid or expired token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/info": {
+      "get": {
+        "summary": "Get public info",
+        "description": "Unauthenticated public route.",
+        "responses": {
+          "200": {
+            "description": "Public info message",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Welcome stranger! This info is public."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/protected/profile": {
+      "get": {
+        "summary": "Get protected profile",
+        "description": "Returns safe user metadata for an authenticated user.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe user profile metadata returned",
+            "content": {
+              "application/json": {
+                "example": {
+                  "user": {
+                    "id": "12345678-1234-1234-1234-1234567890ab",
+                    "email": "user@example.com",
+                    "created_at": "2026-09-17T21:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Invalid or expired token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/protected/dashboard": {
+      "get": {
+        "summary": "Get protected dashboard",
+        "description": "Returns welcome message and safe user data for an authenticated user.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard data returned",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Welcome to the protected dashboard",
+                  "user": {
+                    "id": "12345678-1234-1234-1234-1234567890ab",
+                    "email": "user@example.com"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Access token required"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
