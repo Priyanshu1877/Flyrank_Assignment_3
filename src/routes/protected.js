@@ -1,4 +1,5 @@
 const express = require("express");
+const supabase = require("../supabase");
 
 const router = express.Router();
 
@@ -14,9 +15,9 @@ router.get("/public/info", (req, res) => {
 
 /**
  * GET /protected/profile
- * Token-presence check only for Stage 2 (no Supabase token verification yet)
+ * Stage 3: Supabase JWT token verification
  */
-router.get("/protected/profile", (req, res) => {
+router.get("/protected/profile", async (req, res) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || typeof authHeader !== "string") {
@@ -28,10 +29,25 @@ router.get("/protected/profile", (req, res) => {
     return res.status(401).json({ error: "Access token required" });
   }
 
-  // Token presence verified (Stage 2 check passed)
-  return res.json({
-    message: "Protected profile placeholder (token presence verified)",
-  });
+  const token = parts[1].trim();
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data || !data.user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    return res.json({
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        created_at: data.user.created_at,
+      },
+    });
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
 });
 
 module.exports = router;
